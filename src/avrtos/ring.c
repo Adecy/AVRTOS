@@ -63,5 +63,7 @@ int8_t k_ring_pop(struct k_ring *ring, char *data)
 
 int8_t k_ring_reset(struct k_ring *ring)
 {
+	ARG_UNUSED(ring);
+	
 	return -ENOTSUP;
 }

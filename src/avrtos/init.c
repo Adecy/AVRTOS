@@ -12,7 +12,7 @@
 #include "kernel_private.h"
 #include "mem_slab.h"
 #include "stack_sentinel.h"
-#include "stdio.h"
+#include "stdout.h"
 #include "timer.h"
 
 extern void z_init_sysclock(void);
@@ -48,7 +48,7 @@ z_save_mcusr:
 #endif
 
 void z_avrtos_init(void)
-{
+{	
 #if CONFIG_KERNEL_CLEAR_WDT_ON_INIT
 	/* Page 52 (ATmega328p datasheet) :
 	 *	Note: If the Watchdog is accidentally enabled, for example by a

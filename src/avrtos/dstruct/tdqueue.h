@@ -7,8 +7,8 @@
 #ifndef _AVRTOS_TDQUEUE_H
 #define _AVRTOS_TDQUEUE_H
 
-#include "../defines.h"
 #include "dlist.h"
+#include "../defines.h"
 
 #ifdef __cplusplus
 extern "C" {

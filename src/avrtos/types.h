@@ -9,8 +9,8 @@
 
 #include <stddef.h>
 
-#include "defines.h"
 #include "dstruct/dlist.h"
+#include "defines.h"
 #include "dstruct/tqueue.h"
 
 /**
@@ -45,6 +45,7 @@ typedef void (*k_thread_entry_t)(void *);
  * This structure is designed to be lightweight, with a minimal size of 16 bytes in its
  * basic form.
  */
+
 struct k_thread {
 	void *sp; ///< Stack pointer, must be the first member of the structure !!
 

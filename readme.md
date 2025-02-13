@@ -1,5 +1,7 @@
 # AVRTOS: An RTOS for 8-bit AVR Microcontrollers
 
+**[Note about rust support in the project](#rust-support)**
+
 ## Introduction
 
 AVRTOS is a real-time operating system (RTOS) crafted for 8-bit AVR microcontrollers.
@@ -437,3 +439,165 @@ Run the sample in QEMU:
 A [Jenkinsfile](./Jenkinsfile) is provided to build the project in a Jenkins (multibranch) pipeline.
 
 It is based on the previous Docker container: `devops/fedora-avr-toolchain`
+
+## Rust support
+
+Rust support is currently in development, the goal is to provide a Rust API to
+compile rust programs using AVRTOS.
+
+Major steps are:
+
+- Generate rust bindings for the C API using `bindgen`.
+- Compile the kernel sources as a static library to link with the rust program, this will take place in the `avrtos-sys` crate.
+- Provide an rust idiomatic API to use AVRTOS, this will take place in the `avrtos-core` crate.
+- Provide examples to demonstrate the usage of AVRTOS in Rust using a real board and QEMU, this will take place in the `avrtos-examples` crate.
+- Extend the support to other boards (e.g. ATmega328p).
+
+External (resources):
+
+- [avr-hal-template](https://github.com/Rahix/avr-hal-template/tree/main)
+- [avr-hal](https://github.com/Rahix/avr-hal/blob/main/rust-toolchain.toml)
+- [Compiler Weekly: LLVM to AVR](https://schroer.ca/2021/11/07/cw-avr-target/)
+
+Note about current development:
+
+- Sysclock is configured with 100000us period
+- Scheduler debug is active
+- Only `atmega2560` is supported
+- [src/avrtos/rust_helpers.c](src/avrtos/rust_helpers.c) servers development purposes but should behave as a bridge between C and avrtos-core in the future.
+
+### Generate Rust bindings
+
+Script [rust-avrtos-sys/scripts/gen.sh](rust-avrtos-sys/scripts/gen.sh) generates the Rust bindings for the C API. It takes care only `avrtos` API is generated (mainly structures and functions).
+The bindgen targets the `atmega2560` cpu variant only, bingen relies on clang which
+has a *experimental* support for AVR. Default configuration constants are provided, 
+most of the constants are not used by the headers, only constants which enable/disable
+a feature are used.
+
+Bindings will end up in [rust-avrtos-sys/src/bindings.rs](rust-avrtos-sys/src/bindings.rs).
+
+TODOs:
+
+- The path to the `avr` headers must be updated to find the system headers automatically.
+Maybe the script can be transformed into a CMakelist to generate the bindings during the build process.
+- Move default configuration constants to a dedicated header file: [](./src/avrtos/avrtos_rust_conf.h).
+
+### Compile the kernel as a static library
+
+The build script [rust-avrtos-sys/build.rs](rust-avrtos-sys/build.rs) compiles the kernel sources as a static library. It uses the `cc` crate to compile the sources.
+
+Configuration constants must be correct at this stage, as the sources are compiled.
+
+Linker script is provided in [architecture/avr/avrtos-avr6.xn](architecture/avr/avrtos-avr6.xn).
+
+### Provide an idiomatic API
+
+The `avrtos-core` crate will provide an idiomatic API to use AVRTOS in Rust.
+The goal is to be to able most of the avrtos features with a fully safe rust API.
+
+### Provide examples
+
+Build current examples with:
+
+- `cargo run --package rust-avrtos-examples --release --bin loop_invalid_assembly`
+- `cargo run --package rust-avrtos-examples --release --bin sleep_demo`
+
+Feel free to test the binary by configuring the `runner` in the [.cargo/config.toml](.cargo/config.toml) file:
+
+- The `atmega2560` with `runner = "ravedude -cb 115200 mega2560"` 
+- QEMU with `runner = "./scripts/qemu-runner.sh"`, also start debugging with `F5`,
+ see [.vscode/launch.json](.vscode/launch.json)
+
+### Current issues
+
+Below are the current issues I'm facing with the Rust support:
+
+#### Compiler
+
+I'm unable to find a correct version for the compiler (see [rust-toolchain.toml](rust-toolchain.toml)):
+
+- `nightly` seems to work but cannot be reproduced.
+- `nightly-2024-03-22` which was tested with [avr-hal](https://github.com/Rahix/avr-hal/blob/main/rust-toolchain.toml), doesn't work with `cc` or `bindgen`.
+	- Error is exactly described in this [issue (avr-hal: 537)](https://github.com/Rahix/avr-hal/issues/537)
+
+#### Invalid assembly generated
+
+Following example generates invalid assembly:
+
+```rust
+#![no_std]
+#![no_main]
+#![allow(non_upper_case_globals)]
+#![allow(non_camel_case_types)]
+#![allow(non_snake_case)]
+#![allow(dead_code)]
+
+use core::ffi::c_char;
+
+use avrtos_sys::{
+    serial_init_baud, serial_print
+};
+use panic_halt as _;
+
+const boot: &'static str = "avrtos starting\n\x00";
+
+#[arduino_hal::entry]
+fn main() -> ! {
+    unsafe {
+        serial_init_baud(115200);
+        serial_print(boot.as_ptr() as *const c_char);
+    }
+
+    loop {
+    }
+}
+```
+
+The generated assembly of the `main` function is invalid:
+
+```s
+
+000001b2 <main>:
+
+#[arduino_hal::entry]
+ 1b2:	0e 94 db 00 	call	0x1b6	; 0x1b6 <_ZN21loop_invalid_assembly20__avr_device_rt_main17h75ecf0a9a15b5945E>
+
+000001b6 <_ZN21loop_invalid_assembly20__avr_device_rt_main17h75ecf0a9a15b5945E>:
+fn main() -> ! {
+ 1b6:	60 e0       	ldi	r22, 0x00	; 0
+ 1b8:	72 ec       	ldi	r23, 0xC2	; 194
+ 1ba:	81 e0       	ldi	r24, 0x01	; 1
+ 1bc:	90 e0       	ldi	r25, 0x00	; 0
+    unsafe {
+        serial_init_baud(115200);
+ 1be:	0e 94 95 00 	call	0x12a	; 0x12a <serial_init_baud>
+        serial_print(boot.as_ptr() as *const c_char);
+ 1c2:	80 e0       	ldi	r24, 0x00	; 0
+ 1c4:	92 e0       	ldi	r25, 0x02	; 2
+ 1c6:	0e 94 c6 00 	call	0x18c	; 0x18c <serial_print>
+    }
+
+    loop {
+ 1ca:	00 c0       	rjmp	.+0      	; 0x1cc <__udivmodsi4>
+
+000001cc <__udivmodsi4>:
+ 1cc:	a1 e2       	ldi	r26, 0x21	; 33
+ 1ce:	1a 2e       	mov	r1, r26
+ 1d0:	aa 1b       	sub	r26, r26
+ 1d2:	bb 1b       	sub	r27, r27
+ 1d4:	fd 01       	movw	r30, r26
+ 1d6:	0d c0       	rjmp	.+26     	; 0x1f2 <__udivmodsi4_ep>
+```
+
+Loop consists of a `rjmp .+0` instruction, which actually refers to the instruction 
+at the address following the `rjmp` instruction which is the start of the `__udivmodsi4` function.
+
+This issue appears in most of infinite `loop` I've experienced.
+
+This seems to be solved in LLVM 17: <https://github.com/llvm/llvm-project/commit/697a162fa63df328ec9ca334636c5e85390b2bf0>
+Rust `nightly-2025-02-13` does not longer generate invalid assembly.
+
+#### Float conversion or arguments passing ?
+
+I'm not sure, but float calculations seems to be an issue, any use of the
+macro `K_MSEC` or even calling directly `k_sleep` generates issues.

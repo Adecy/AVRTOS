@@ -1,0 +1,23 @@
+[package]
+name = "rust-avrtos-examples"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+panic-halt = "0.2.0"
+ufmt = "0.2.0"
+nb = "1.1.0"
+arduino-hal ={ git = "https://github.com/rahix/avr-hal", rev = "ravedude-0.1.6", features = ["arduino-mega2560"] }
+avrtos-sys = { path = "../rust-avrtos-sys" }
+
+[[bin]]
+name = "loop_invalid_assembly"
+path = "src/loop_invalid_assembly.rs"
+
+[[bin]]
+name = "sleep_demo"
+path = "src/sleep_demo.rs"
+
+[[bin]]
+name = "serial_demo"
+path = "src/serial_demo.rs"

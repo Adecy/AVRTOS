@@ -1,0 +1,21 @@
+[package]
+name = "avrtos-sys"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["avrtos-linker-script", "qemu"]
+avrtos-linker-script = []
+qemu = []
+
+[dependencies]
+panic-halt = "0.2.0"
+ufmt = "0.2.0"
+nb = "1.1.0"
+arduino-hal ={ git = "https://github.com/rahix/avr-hal", rev = "ravedude-0.1.6", features = ["arduino-mega2560"] }
+
+[build-dependencies]
+cc = "1.1"
+bindgen = "0.69"

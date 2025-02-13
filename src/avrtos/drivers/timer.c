@@ -33,6 +33,8 @@ static bool _is_16bits(uint8_t tim_idx)
 
 void ll_timer8_deinit(TIMER8_Device *dev, uint8_t tim_idx)
 {
+	ARG_UNUSED(tim_idx);
+
 	dev->TCCRnA = 0u;
 	dev->TCCRnB = 0u;
 }
@@ -91,6 +93,8 @@ int8_t timer8_init(TIMER8_Device *dev, const struct timer_config *config)
 
 void ll_timer16_deinit(TIMER16_Device *dev, uint8_t tim_idx)
 {
+	ARG_UNUSED(tim_idx);
+	
 	dev->TCCRnA = 0u;
 	dev->TCCRnB = 0u;
 	dev->TCCRnC = 0u;

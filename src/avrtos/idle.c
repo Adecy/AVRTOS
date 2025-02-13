@@ -74,6 +74,8 @@ __attribute__((weak)) void z_idle_hook(void)
  */
 static void z_thread_idle_entry(void *context)
 {
+	ARG_UNUSED(context);
+	
 	for (;;) {
 #if CONFIG_IDLE_HOOK
 		z_idle_hook();

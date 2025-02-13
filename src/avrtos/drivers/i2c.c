@@ -429,6 +429,8 @@ i2c_error_t i2c_last_error(I2C_Device *dev)
 
 int8_t i2c_calc_config(struct i2c_config *config, uint32_t desired_freq)
 {
+	ARG_UNUSED(desired_freq);
+	ARG_UNUSED(config);
 	Z_ARGS_CHECK(config) return -EINVAL;
 
 	return -ENOTSUP;

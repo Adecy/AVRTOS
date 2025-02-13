@@ -47,7 +47,8 @@
 #include "mem_slab.h"
 #include "msgq.h"
 
-#include "stdio.h"
+#include "rust_helpers.h"
+#include "stdout.h"
 
 // clang-format on
 

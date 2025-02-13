@@ -4,7 +4,7 @@ import os
 import os.path
 import subprocess
 
-def dis(name: str, elf: str, elf_dir: str):
+def dis(elf: str, elf_dir: str):
     commands = [
         (f"avr-objdump -S {elf}", f"{elf_dir}/objdump_src.s"),
         (f"avr-objdump -d {elf}", f"{elf_dir}/objdump.s"),
@@ -43,3 +43,4 @@ if __name__ == "__main__":
             if os.path.isfile(elf):
                 commands = dis(name, elf, project_dir)
                 print(f"- Disassembled '{name}' :\n\t" + '\n\t'.join(map(lambda cmd: cmd[1], commands)))
+                

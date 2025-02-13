@@ -12,6 +12,16 @@
 #include "sys.h"
 
 //
+// Enable adaptations for RUST support
+//
+// 0: RUST support is disabled
+// 1: RUST support is enabled
+//
+#ifndef CONFIG_RUST
+#define CONFIG_RUST 0
+#endif
+
+//
 // Indicates whether the kernel is compiled for the Arduino framework.
 //
 // 0: The kernel is not compiled for the Arduino framework.
@@ -39,13 +49,23 @@
 #define Z_CONFIG_PLATFORMIO_IDE 0
 #endif
 
-/* Include Arduino-specific configuration if the Arduino framework is used
+// RUST support is not compatible with Arduino framework or PlatformIO IDE
+#if CONFIG_RUST && (CONFIG_ARDUINO_FRAMEWORK || CONFIG_PLATFORMIO_IDE)
+#error "RUST support is not compatible with Arduino framework or PlatformIO IDE"
+#endif
+
+/*
+ * Include Arduino-specific configuration if the Arduino framework is used
  * without PlatformIO IDE (e.g., Arduino IDE).
  *
  * This configuration is adapted for beginners.
  */
 #if Z_CONFIG_ARDUINO_FRAMEWORK && !Z_CONFIG_PLATFORMIO_IDE
 #include "avrtos_arduinoide_conf.h"
+#endif
+
+#if CONFIG_RUST
+#include "avrtos_rust_conf.h"
 #endif
 
 //

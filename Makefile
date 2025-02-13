@@ -21,7 +21,7 @@ endif
 
 all: single
 
-.PHONY: single cmake multiple upload monitor qemu run_qemu format clean piogen arduino_gen gen flash
+.PHONY: single cmake multiple upload monitor qemu run_qemu format clean piogen arduino_gen gen flash rust rust_build rust_bindgen
 
 cmake:
 	cmake -S . -B build \
@@ -102,6 +102,7 @@ format:
 
 clean:
 	rm -rf build
+	rm -rf target
 
 piogen:
 	python3 ./scripts/piogen.py
@@ -117,3 +118,13 @@ metrics:
 
 # Prepare for release
 publish: piogen arduino_gen format clean multiple metrics arduino_lint
+
+rust_bindgen:
+	./rust-avrtos-sys/scripts/gen.sh
+	
+rust_build:
+	cargo build --package rust-avrtos-examples --release --bin loop_invalid_assembly
+	python3 scripts/rustdis.py
+
+rust:
+	cargo run --package rust-avrtos-examples --release --bin loop_invalid_assembly
